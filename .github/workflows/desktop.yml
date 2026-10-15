@@ -1,0 +1,63 @@
+name: Linux + Windows app
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", "shared/**", "tools/**", ".github/workflows/desktop.yml"]
+  pull_request:
+    paths: ["desktop/**", "shared/**", "tools/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults: { run: { working-directory: desktop } }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # Boots the real Electron app, loads the settings UI, and pushes a fixture screenshot through the
+      # worker thread + OCR + redaction + clipboard. Fails if the UI logs errors or the pipeline breaks.
+      - name: Smoke test (Linux, virtual display)
+        if: runner.os == 'Linux'
+        run: |
+          export JEVSNAP_SMOKE_IMAGE="$PWD/test/fixtures/leaky-terminal.png" JEVSNAP_SMOKE_OUT="$PWD/smoke.json"
+          xvfb-run -a npx electron . --no-sandbox --disable-gpu || true
+          cat smoke.json; echo
+          node -e "const r=require('./smoke.json'); if(!r.ok){console.error(r); process.exit(1)}"
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:JEVSNAP_SMOKE_IMAGE = "$PWD\test\fixtures\leaky-terminal.png"
+          $env:JEVSNAP_SMOKE_OUT = "$PWD\smoke.json"
+          npx electron . 2>&1 | Out-Null
+          Get-Content smoke.json
+          node -e "const r=require('./smoke.json'); if(!r.ok){console.error(r); process.exit(1)}"
+
+      - name: Package
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jevsnap-${{ runner.os }}
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*.exe
+          if-no-files-found: error

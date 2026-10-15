@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>JEVsnap Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <nav>
+    <button data-tab="general" class="active">General</button>
+    <button data-tab="api">API</button>
+    <button data-tab="detection">Detection</button>
+    <button data-tab="ai">AI</button>
+  </nav>
+
+  <main>
+    <section id="tab-general">
+      <h2>Screenshots folder</h2>
+      <div class="row">
+        <code id="folderPath" class="grow"></code>
+        <button id="pickFolder">Choose…</button>
+        <button id="openFolder">Show</button>
+      </div>
+      <p class="hint">Only processed screenshots are saved: in <code>Redacted/</code> when something was hidden, or <code>Not Redacted/</code> when no redactions were needed. Originals are never kept.</p>
+
+      <h2>Shortcut</h2>
+      <div class="row">
+        <code id="hotkeyLabel"></code>
+        <button id="recordHotkey">Record</button>
+        <button id="resetHotkey">Reset</button>
+        <span id="hotkeyMsg" class="hint"></span>
+      </div>
+
+      <h2>Behavior</h2>
+      <label class="check"><input type="checkbox" data-key="copyToClipboard"> Copy the redacted screenshot to the clipboard</label>
+      <label class="check"><input type="checkbox" data-key="showNotifications"> Show a notification when done</label>
+      <label class="check"><input type="checkbox" data-key="playSound"> Play a sound when done</label>
+      <label class="check"><input type="checkbox" data-key="launchAtLogin"> Launch JEVsnap at login</label>
+    </section>
+
+    <section id="tab-api" hidden>
+      <h2>TypeSafe API key</h2>
+      <div class="row">
+        <input id="apiKey" type="password" class="grow" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
+        <button id="saveKey">Save</button>
+        <button id="removeKey">Remove</button>
+      </div>
+      <div class="row">
+        <button id="testConn">Test connection</button>
+        <span id="connMsg" class="hint"></span>
+      </div>
+      <p id="keyInfo" class="hint"></p>
+      <p class="hint">Get a key at <a href="#" id="consoleLink">console.typesafe.ai</a>. Without a key JEVsnap still works using on-device rules only.</p>
+
+      <h2>Models</h2>
+      <label>Text model <input type="text" data-key="textModel"></label>
+      <label>Visual (Box) model <input type="text" data-key="visualModel"></label>
+      <p class="hint">Box needs <code>jev-preview</code> or <code>jev-1.14.0</code>. Aliases move when new models ship; pin a version (e.g. <code>jev-1.14.0</code>) for stable behavior.</p>
+
+      <h2>Advanced</h2>
+      <label>API base URL <input type="text" data-key="apiBaseURL"></label>
+      <label>Request timeout (seconds) <input type="number" min="5" max="300" data-key="requestTimeoutSeconds" data-type="number"></label>
+
+      <h2>What leaves your computer</h2>
+      <p class="hint">Default: only the recognized <b>text</b> of the screenshot, with anything matched by local rules replaced by <code>[HIDDEN]</code>. The image is never uploaded unless you enable the visual check on the AI tab, and then only after everything found so far has been blacked out.</p>
+    </section>
+
+    <section id="tab-detection" hidden>
+      <h2>Detect on-device (offline, always runs)</h2>
+      <div id="detectors"></div>
+      <label class="check"><input type="checkbox" data-key="detectBarcodes"> QR codes</label>
+
+      <h2>Your own rules</h2>
+      <label>Always hide these phrases (one per line, case-insensitive)
+        <textarea data-key="customPhrasesText" rows="3" spellcheck="false"></textarea></label>
+      <label>Always hide matches of these regular expressions (one per line)
+        <textarea data-key="customRegexesText" rows="3" spellcheck="false"></textarea></label>
+      <p id="regexMsg" class="hint error"></p>
+      <label>Never hide text containing these (one per line), e.g. your own email
+        <textarea data-key="allowlistText" rows="3" spellcheck="false"></textarea></label>
+
+      <h2>Appearance</h2>
+      <label>Padding around hidden areas: <b id="padLabel"></b> px
+        <input type="range" min="0" max="30" step="1" data-key="paddingPixels" data-type="number" data-label="padLabel"></label>
+    </section>
+
+    <section id="tab-ai" hidden>
+      <h2>AI text check (Jev)</h2>
+      <label class="check"><input type="checkbox" data-key="aiEnabled"> Ask Jev about each line of text</label>
+      <p class="hint">Catches what rules can't: names, addresses, internal hostnames, customer data. Needs an API key. Falls back to on-device rules if the request fails.</p>
+      <label>Hide text that contains…
+        <textarea data-key="aiHideRules" rows="4" spellcheck="false"></textarea></label>
+      <label>Keep text that is only…
+        <textarea data-key="aiKeepRules" rows="3" spellcheck="false"></textarea></label>
+      <label>Sensitivity: hide if Jev's yes-probability ≥ <b id="thrLabel"></b>
+        <input type="range" min="0.1" max="0.9" step="0.05" data-key="aiThreshold" data-type="number" data-label="thrLabel" data-fmt="pct"></label>
+      <p class="hint">Lower hides more (and over-hides more). Higher hides only what Jev is sure about.</p>
+      <label class="check"><input type="checkbox" data-key="abortIfAIUnavailable"> Cancel the capture if the AI check fails (instead of using on-device rules only)</label>
+      <button id="resetRules">Reset rules to defaults</button>
+
+      <h2>Visual check (Jev Box, experimental)</h2>
+      <label class="check"><input type="checkbox" data-key="visualEnabled"> Look for things in the image itself</label>
+      <p class="hint">Uses Jev's preview image + Box features, which TypeSafe flags as not production-ready. Uploads a downscaled copy of the screenshot with everything already found blacked out. Box returns one region per target.</p>
+      <label>Targets (one per line, up to 8)
+        <textarea data-key="visualTargetsText" rows="3" spellcheck="false"></textarea></label>
+      <label>Min. confidence: <b id="vcLabel"></b>
+        <input type="range" min="0.1" max="0.95" step="0.05" data-key="visualMinConfidence" data-type="number" data-label="vcLabel" data-fmt="pct"></label>
+    </section>
+  </main>
+  <footer id="footer" class="hint"></footer>
+  <script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+{
+ "_comment": "Shared detector test vectors. Both the Swift (macos/) and TypeScript (desktop/) detectors must satisfy every case. 'detectors': null/absent = all enabled. mode 'exact' (default) compares the sorted list of matched substrings; 'contains' checks each expected string is matched. 'text' and each 'expect' entry may be an array of strings that are concatenated (used to keep secret-shaped literals out of the repo so secret scanners stay quiet).",
+ "cases": [
+  {
+   "name": "email",
+   "text": "contact jane.doe+x@mail.example.co.uk now",
+   "expect": [
+    "jane.doe+x@mail.example.co.uk"
+   ]
+  },
+  {
+   "name": "email-negative",
+   "text": "no address here @ all",
+   "expect": []
+  },
+  {
+   "name": "phone-intl",
+   "text": "call +1 (415) 555-2671 today",
+   "expect": [
+    "+1 (415) 555-2671"
+   ]
+  },
+  {
+   "name": "phone-dashes",
+   "text": "tel 415-555-2671",
+   "expect": [
+    "415-555-2671"
+   ]
+  },
+  {
+   "name": "phone-not-version-or-date",
+   "text": "version 1.14.0 released 2026-10-14",
+   "expect": []
+  },
+  {
+   "name": "phone-not-short-ip",
+   "text": "build 192.168.100",
+   "expect": []
+  },
+  {
+   "name": "card-luhn-valid",
+   "text": "card 4242 4242 4242 4242 exp",
+   "expect": [
+    "4242 4242 4242 4242"
+   ]
+  },
+  {
+   "name": "card-luhn-invalid",
+   "text": "order 1234 5678 9012 3456 ok",
+   "expect": []
+  },
+  {
+   "name": "ssn",
+   "text": "ssn 123-45-6789",
+   "expect": [
+    "123-45-6789"
+   ]
+  },
+  {
+   "name": "ssn-zero-area",
+   "text": "ssn 000-12-3456",
+   "expect": []
+  },
+  {
+   "name": "ssn-9xx",
+   "text": "ssn 900-12-3456",
+   "expect": []
+  },
+  {
+   "name": "ipv4",
+   "text": "server 10.20.30.40 up",
+   "expect": [
+    "10.20.30.40"
+   ]
+  },
+  {
+   "name": "ipv4-loopback",
+   "text": "localhost 127.0.0.1",
+   "expect": []
+  },
+  {
+   "name": "ipv4-out-of-range",
+   "text": "not an ip 999.1.1.1",
+   "expect": []
+  },
+  {
+   "name": "ipv4-five-parts",
+   "text": "1.2.3.4.5",
+   "expect": []
+  },
+  {
+   "name": "token-aws",
+   "text": [
+    "key: ",
+    "AK",
+    "IAIOSFODNN7EXAMPLE end"
+   ],
+   "mode": "contains",
+   "expect": [
+    [
+     "AK",
+     "IAIOSFODNN7EXAMPLE"
+    ]
+   ]
+  },
+  {
+   "name": "token-github",
+   "text": [
+    "key: ",
+    "gh",
+    "p_a1B2a1B2a1B2a1B2a1B2a1B2a1B2a1B2a1B2 end"
+   ],
+   "mode": "contains",
+   "expect": [
+    [
+     "gh",
+     "p_a1B2a1B2a1B2a1B2a1B2a1B2a1B2a1B2a1B2"
+    ]
+   ]
+  },
+  {
+   "name": "token-stripe",
+   "text": [
+    "key: ",
+    "sk",
+    "_live_x9x9x9x9x9x9x9x9x9x9x9x9 end"
+   ],
+   "mode": "contains",
+   "expect": [
+    [
+     "sk",
+     "_live_x9x9x9x9x9x9x9x9x9x9x9x9"
+    ]
+   ]
+  },
+  {
+   "name": "token-openai",
+   "text": [
+    "key: ",
+    "sk",
+    "-proj-Ab3_Ab3_Ab3_Ab3_Ab3_Ab3_Ab3_Ab3_ end"
+   ],
+   "mode": "contains",
+   "expect": [
+    [
+     "sk",
+     "-proj-Ab3_Ab3_Ab3_Ab3_Ab3_Ab3_Ab3_Ab3_"
+    ]
+   ]
+  },
+  {
+   "name": "token-slack",
+   "text": [
+    "key: ",
+    "xo",
+    "xb-1234567890-abcdefghij end"
+   ],
+   "mode": "contains",
+   "expect": [
+    [
+     "xo",
+     "xb-1234567890-abcdefghij"
+    ]
+   ]
+  },
+  {
+   "name": "jwt",
+   "text": [
+    "Authorization ",
+    "eyJhbGciOiJIUzI1NiJ9",
+    ".eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r"
+   ],
+   "mode": "contains",
+   "expect": [
+    [
+     "eyJhbGciOiJIUzI1NiJ9",
+     ".eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r"
+    ]
+   ]
+  },
+  {
+   "name": "private-key-header",
+   "text": "-----BEGIN RSA PRIVATE KEY-----",
+   "expect": [
+    "-----BEGIN RSA PRIVATE KEY-----"
+   ]
+  },
+  {
+   "name": "bearer",
+   "text": "Authorization: Bearer abcdef0123456789ABCDEF==",
+   "expect": [
+    "abcdef0123456789ABCDEF=="
+   ]
+  },
+  {
+   "name": "assign-env-password",
+   "text": "DB_PASSWORD=hunter2hunter2",
+   "expect": [
+    "hunter2hunter2"
+   ]
+  },
+  {
+   "name": "assign-quoted-key",
+   "text": "api_key: \"abc123XYZ\"",
+   "expect": [
+    "abc123XYZ"
+   ]
+  },
+  {
+   "name": "assign-env-api-key",
+   "text": "TYPESAFE_API_KEY=ts_abcdef",
+   "expect": [
+    "ts_abcdef"
+   ]
+  },
+  {
+   "name": "assign-prose-negative",
+   "text": "the password field is empty",
+   "expect": []
+  },
+  {
+   "name": "url-credentials-only",
+   "text": "postgres://admin:s3cretPass@db.internal:5432/app",
+   "detectors": [
+    "urlCredentials"
+   ],
+   "expect": [
+    "s3cretPass"
+   ]
+  },
+  {
+   "name": "url-credentials-all-detectors",
+   "text": "postgres://admin:s3cretPass@db.internal:5432/app",
+   "mode": "contains",
+   "expect": [
+    "s3cretPass"
+   ]
+  },
+  {
+   "name": "entropy-blob",
+   "text": "blob q8Zr2KxP9vLm4TnW7bYc3HdJ6sFg1AeU5oXi0",
+   "expect": [
+    "q8Zr2KxP9vLm4TnW7bYc3HdJ6sFg1AeU5oXi0"
+   ]
+  },
+  {
+   "name": "entropy-git-sha-negative",
+   "text": "commit 3f786850e387550fdab836ed7e6dc881de23001b",
+   "expect": []
+  },
+  {
+   "name": "entropy-identifier-negative",
+   "text": "getUserProfileDataFromServerCacheManager",
+   "expect": []
+  },
+  {
+   "name": "home-mac",
+   "text": "/Users/alice/Projects/app",
+   "expect": [
+    "alice"
+   ]
+  },
+  {
+   "name": "home-windows",
+   "text": "C:\\Users\\Bob\\Desktop",
+   "expect": [
+    "Bob"
+   ]
+  },
+  {
+   "name": "home-shared-negative",
+   "text": "/Users/Shared/data",
+   "expect": []
+  },
+  {
+   "name": "toggle-off",
+   "text": "a@b.com",
+   "detectors": [
+    "phone"
+   ],
+   "expect": []
+  },
+  {
+   "name": "toggle-on",
+   "text": "415-555-2671",
+   "detectors": [
+    "phone"
+   ],
+   "expect": [
+    "415-555-2671"
+   ]
+  },
+  {
+   "name": "custom-and-allowlist",
+   "text": "about project falcon, ticket TKT-1234, mail support@mycompany.com or bob@other.org",
+   "settings": {
+    "customPhrasesText": "Project Falcon\n",
+    "customRegexesText": "TKT-\\d{4}\n([unclosed",
+    "allowlistText": "support@mycompany.com"
+   },
+   "expect": [
+    "TKT-1234",
+    "bob@other.org",
+    "project falcon"
+   ]
+  }
+ ]
+}

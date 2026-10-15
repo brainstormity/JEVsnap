@@ -1,0 +1,22 @@
+title = "JEVsnap secret scanning"
+[extend]
+useDefault = true
+
+# Only known synthetic fixtures in immutable historical test commits are excluded.
+[[allowlists]]
+description = "Historical synthetic JWT fixtures"
+targetRules = ["jwt"]
+condition = "AND"
+commits = ["6f2608d14cee3718fd95516823ebcd6fd96fe2f0", "45e1bb615910e1b7922a3aeaff1f65ca2fc3d3fd"]
+paths = ['^shared/detector-cases\.json$', '^Tests/[^/]+/LocalDetectorTests\.swift$']
+regexTarget = "secret"
+regexes = ['^ey[J]hbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.dBjftJeZ4CVPmB92K27uhbUJU1p1r$']
+
+[[allowlists]]
+description = "Historical synthetic payment-token fixture"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+commits = ["45e1bb615910e1b7922a3aeaff1f65ca2fc3d3fd"]
+paths = ['^Tests/[^/]+/RedactionEngineTests\.swift$']
+regexTarget = "secret"
+regexes = ['^sk_live_[a]bcdefghijklmnop1234$']

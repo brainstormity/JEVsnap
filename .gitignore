@@ -1,0 +1,37 @@
+# Swift
+macos/.build/
+macos/build/
+.swiftpm/
+*.xcodeproj
+xcuserdata/
+DerivedData/
+Package.resolved
+
+# Node / Electron
+node_modules/
+desktop/dist/
+desktop/release/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local credentials and runtime state
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+apikey.bin
+settings.json
+
+# Captured images and local smoke-test output
+Originals/
+Redacted/
+Not Redacted/
+smoke*.json

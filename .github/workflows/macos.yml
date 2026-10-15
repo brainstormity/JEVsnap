@@ -1,0 +1,48 @@
+name: macOS app
+on:
+  push:
+    branches: [main]
+    paths: ["macos/**", "shared/**", "tools/**", ".github/workflows/macos.yml"]
+  pull_request:
+    paths: ["macos/**", "shared/**", "tools/**", ".github/workflows/macos.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-linux:
+    name: Swift core tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    defaults: { run: { working-directory: macos } }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: swift test
+
+  macos:
+    # macOS runners bill at 10x minutes on private repos; the path filter above keeps this job rare.
+    name: Build app + tests (macOS)
+    runs-on: macos-14
+    defaults: { run: { working-directory: macos } }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: swift build
+      - run: swift test
+      - name: Live transport test against the mock server
+        run: |
+          python3 ../tools/mock_jev_server.py 8765 &
+          sleep 1
+          JEVSNAP_TEST_SERVER=http://127.0.0.1:8765 swift test --filter LiveTransportTests
+      - name: Package JEVsnap.app
+        run: ARCHS="arm64 x86_64" ./scripts/build-app.sh
+      - name: Archive app (preserve executable permissions)
+        run: ditto -c -k --sequesterRsrc --keepParent build/JEVsnap.app build/JEVsnap-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JEVsnap-macos-app
+          path: macos/build/JEVsnap-macos.zip
